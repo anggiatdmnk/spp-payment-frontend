@@ -6,6 +6,9 @@ import { useNavigate } from 'react-router-dom';
 export default function StudentDashboard() {
     const navigate = useNavigate();
 
+    // State Navigasi Sidebar
+    const [activeMenu, setActiveMenu] = useState('dashboard');
+
     // Data State
     const [invoices, setInvoices] = useState([]);
     const [vouchers, setVouchers] = useState([]);
@@ -86,7 +89,7 @@ export default function StudentDashboard() {
         }
     };
 
-    // Buka Modal
+    // Buka Modal Pembayaran
     const openPaymentModal = (invoice) => {
         setSelectedInvoice(invoice);
         setVoucherCode(''); 
@@ -95,18 +98,17 @@ export default function StudentDashboard() {
         setError('');
     };
 
-    // Tutup Modal
+    // Tutup Modal Pembayaran
     const closePaymentModal = () => {
         setIsModalOpen(false);
         setSelectedInvoice(null);
         setVoucherCode('');
     };
 
-    // Fungsi MURNI MENYALIN KODE ke Clipboard (Tanpa Auto-fill)
+    // Copy Voucher
     const handleCopyVoucher = async (code) => {
         try {
             await navigator.clipboard.writeText(code);
-            
             setMessage(`Berhasil disalin! Silakan paste kode ${code} saat konfirmasi pembayaran.`);
             setTimeout(() => setMessage(''), 4000); 
         } catch (err) {
@@ -157,7 +159,7 @@ export default function StudentDashboard() {
         }
     };
 
-    // Fungsi untuk mereset metode pembayaran
+    // Batal Pending
     const handleCancelPending = async () => {
         if (!selectedInvoice) return;
         if (!window.confirm("Apakah Anda yakin ingin mereset/mengganti metode pembayaran? Transaksi sebelumnya akan dibatalkan.")) return;
@@ -197,201 +199,294 @@ export default function StudentDashboard() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 relative">
-            <nav className="flex items-center justify-between p-4 text-white bg-blue-900 shadow-md">
-                <div>
-                    <h1 className="text-xl font-bold tracking-wide">Portal Siswa</h1>
+        <div className="flex h-screen overflow-hidden bg-slate-50 font-sans">
+            
+            {/* ================= SIDEBAR KIRI ================= */}
+            <aside className="w-64 bg-blue-900 text-white flex flex-col shadow-xl z-20 flex-shrink-0">
+                <div className="p-6 border-b border-blue-800">
+                    <h1 className="text-2xl font-extrabold tracking-wide">Portal Siswa</h1>
                     {studentProfile && (
-                        <p className="text-xs text-blue-200">
-                            Siswa: <span className="font-semibold">{studentProfile.name}</span> | Kelas: {studentProfile.class}
-                        </p>
+                        <div className="mt-4 p-3 bg-blue-800/50 rounded-lg">
+                            <p className="text-[10px] text-blue-300 uppercase tracking-wider mb-1">Masuk Sebagai</p>
+                            <p className="font-semibold text-sm truncate">{studentProfile.name}</p>
+                            <p className="text-xs text-blue-200 mt-0.5">Kelas: {studentProfile.class}</p>
+                        </div>
                     )}
                 </div>
-                <div className="flex space-x-2">
+                
+                {/* Navigasi Menu */}
+                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                    <p className="px-3 mb-2 text-xs font-semibold tracking-wider text-blue-400 uppercase">Menu Utama</p>
+                    
+                    <button 
+                        onClick={() => setActiveMenu('dashboard')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeMenu === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                        Beranda & Voucher
+                    </button>
+                    
+                    <button 
+                        onClick={() => setActiveMenu('tagihan')}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeMenu === 'tagihan' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            Tagihan Aktif
+                        </div>
+                        {unpaidInvoices.length > 0 && (
+                            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{unpaidInvoices.length}</span>
+                        )}
+                    </button>
+                    
+                    <button 
+                        onClick={() => setActiveMenu('riwayat')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${activeMenu === 'riwayat' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-200 hover:bg-blue-800 hover:text-white'}`}
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                        Riwayat Lunas
+                    </button>
+                </nav>
+
+                {/* Footer Sidebar */}
+                <div className="p-4 border-t border-blue-800 space-y-3">
                     <button 
                         onClick={() => setIsPasswordModalOpen(true)} 
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-800 border border-blue-700 rounded hover:bg-blue-700 transition-colors shadow-sm"
+                        className="w-full flex items-center justify-center gap-2 p-2.5 text-sm bg-blue-800/80 text-blue-100 rounded-lg hover:bg-blue-700 hover:text-white transition-colors"
                     >
-                        🔒 Ubah Password
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        Ubah Password
                     </button>
-                    <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors shadow-sm">
-                        Keluar Aplikasi
+                    <button 
+                        onClick={handleLogout} 
+                        className="w-full flex items-center justify-center gap-2 p-2.5 text-sm bg-red-600/90 text-white rounded-lg hover:bg-red-500 transition-colors shadow-sm"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        Keluar
                     </button>
                 </div>
-            </nav>
+            </aside>
 
-            <div className="max-w-4xl p-6 mx-auto mt-6">
-                {message && !isModalOpen && <div className="p-4 mb-4 text-sm text-green-700 bg-green-100 border border-green-200 rounded-lg shadow-sm">{message}</div>}
-                {error && !isModalOpen && <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg shadow-sm">{error}</div>}
+            {/* ================= AREA KONTEN UTAMA ================= */}
+            <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+                
+                {/* Header Dinamis */}
+                <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5">
+                    <h2 className="text-xl font-bold text-slate-800 capitalize">
+                        {activeMenu === 'dashboard' ? 'Ringkasan & Voucher' : activeMenu === 'tagihan' ? 'Tagihan Tertunda' : 'Riwayat Pembayaran'}
+                    </h2>
+                </header>
 
-                {/* 1. DAFTAR VOUCHER PEMBAYARAN AKTIF */}
-                <div className="p-6 mb-6 bg-white border border-slate-200 rounded-xl shadow-sm bg-gradient-to-r from-blue-50/40 to-indigo-50/20">
-                    <h2 className="mb-1 text-sm font-bold text-slate-800 flex items-center">🎟️ List Voucher Pembayaran Anda</h2>
-                    <p className="mb-4 text-xs text-slate-500">Klik tombol salin pada voucher yang aktif di bawah ini untuk menggunakannya.</p>
+                <div className="p-8 max-w-5xl mx-auto">
                     
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {activeVouchers.length === 0 ? (
-                            <p className="text-xs text-slate-400 col-span-3 italic">Belum ada voucher pembayaran aktif yang tersedia.</p>
-                        ) : (
-                            activeVouchers.map((voucher) => (
-                                <div 
-                                    key={voucher.id} 
-                                    onClick={() => handleCopyVoucher(voucher.code)}
-                                    className="p-3 border border-slate-200 rounded-lg bg-white shadow-sm flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group"
-                                >
-                                    <span className="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-mono font-bold border border-dashed border-slate-300 rounded group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-300 transition-colors">
-                                        {voucher.code}
-                                    </span>
-                                    <p className="mt-2 text-[10px] text-slate-400 group-hover:text-blue-500 font-medium uppercase tracking-wider flex items-center gap-1">
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                        Salin Kode
-                                    </p>
+                    {/* Pesan Global */}
+                    {message && !isModalOpen && <div className="p-4 mb-6 text-sm text-green-700 bg-green-100 border border-green-200 rounded-lg shadow-sm flex items-center gap-3"><svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>{message}</div>}
+                    {error && !isModalOpen && <div className="p-4 mb-6 text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg shadow-sm flex items-center gap-3"><svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>{error}</div>}
+
+                    {/* --- KONTEN BERANDA & VOUCHER --- */}
+                    {activeMenu === 'dashboard' && (
+                        <div className="animate-fade-in-up">
+                            <div className="p-8 bg-white border border-slate-200 rounded-2xl shadow-sm bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
+                                <h2 className="mb-2 text-base font-bold text-slate-800 flex items-center gap-2">
+                                    🎟️ List Voucher Pembayaran Anda
+                                </h2>
+                                <p className="mb-6 text-sm text-slate-500">Klik tombol di bawah ini untuk menyalin kode voucher yang aktif.</p>
+                                
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    {activeVouchers.length === 0 ? (
+                                        <div className="col-span-full p-6 text-center border-2 border-dashed border-slate-200 rounded-xl">
+                                            <p className="text-sm text-slate-400">Belum ada voucher pembayaran aktif yang tersedia saat ini.</p>
+                                        </div>
+                                    ) : (
+                                        activeVouchers.map((voucher) => (
+                                            <div 
+                                                key={voucher.id} 
+                                                onClick={() => handleCopyVoucher(voucher.code)}
+                                                className="p-4 border border-slate-200 rounded-xl bg-white shadow-sm flex flex-col justify-center items-center cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group relative overflow-hidden"
+                                            >
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
+                                                <span className="px-4 py-2 bg-slate-50 text-slate-700 text-sm font-mono font-bold border border-dashed border-slate-300 rounded group-hover:bg-blue-50 group-hover:text-blue-700 group-hover:border-blue-300 transition-colors">
+                                                    {voucher.code}
+                                                </span>
+                                                <p className="mt-3 text-[11px] text-slate-400 group-hover:text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                                    Salin Kode
+                                                </p>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                            ))
-                        )}
-                    </div>
-                </div>
+                            </div>
+                        </div>
+                    )}
 
-                {/* 2. TAGIHAN BELUM DIBAYAR */}
-                <div className="p-6 mb-6 bg-white border border-slate-200 rounded-xl shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold text-slate-800">⚠️ Tagihan Belum Dibayar</h2>
-                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">
-                            {unpaidInvoices.length} Tagihan Aktif
-                        </span>
-                    </div>
-                    
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50/70">
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Bulan & Tahun</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Keterangan</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Nominal</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {unpaidInvoices.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="4" className="p-6 text-sm text-center text-slate-500 bg-slate-50/30">
-                                            Hore! Semua tagihan SPP Anda telah lunas. 🎉
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    unpaidInvoices.map((invoice) => (
-                                        <tr key={invoice.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                                            <td className="p-3 text-sm font-semibold text-slate-800">{invoice.month} {invoice.year}</td>
-                                            <td className="p-3 text-sm text-slate-500">{invoice.description || 'SPP Reguler Bulanan'}</td>
-                                            <td className="p-3 text-sm text-red-600 font-bold">Rp {invoice.amount.toLocaleString('id-ID')}</td>
-                                            <td className="p-3 text-sm text-center">
-                                                <button 
-                                                    onClick={() => openPaymentModal(invoice)} 
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm transition-all whitespace-nowrap"
-                                                >
-                                                    Bayar Sekarang
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                    {/* --- KONTEN TAGIHAN TERTUNDA --- */}
+                    {activeMenu === 'tagihan' && (
+                        <div className="animate-fade-in-up">
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <h2 className="text-lg font-bold text-slate-800">Menunggu Pembayaran</h2>
+                                    <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold shadow-sm">
+                                        {unpaidInvoices.length} Tagihan Aktif
+                                    </span>
+                                </div>
+                                
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50">
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Bulan & Tahun</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Keterangan</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Nominal</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {unpaidInvoices.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" className="p-12 text-sm text-center text-slate-500">
+                                                        <div className="flex flex-col items-center justify-center">
+                                                            <span className="text-4xl mb-3">🎉</span>
+                                                            <p className="font-medium text-slate-700">Hore! Semua tagihan SPP Anda telah lunas.</p>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                unpaidInvoices.map((invoice) => (
+                                                    <tr key={invoice.id} className="hover:bg-slate-50/80 transition-colors">
+                                                        <td className="p-4 text-sm font-bold text-slate-800">{invoice.month} {invoice.year}</td>
+                                                        <td className="p-4 text-sm text-slate-500">{invoice.description || 'SPP Reguler Bulanan'}</td>
+                                                        <td className="p-4 text-sm text-red-600 font-bold">Rp {invoice.amount.toLocaleString('id-ID')}</td>
+                                                        <td className="p-4 text-center">
+                                                            <button 
+                                                                onClick={() => openPaymentModal(invoice)} 
+                                                                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 hover:shadow-md transition-all whitespace-nowrap"
+                                                            >
+                                                                Bayar Sekarang
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                {/* 3. RIWAYAT PEMBAYARAN LUNAS */}
-                <div className="p-6 bg-white border border-slate-200 rounded-xl shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-bold text-slate-800">✅ Riwayat Pembayaran SPP (Lunas)</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-slate-200 bg-slate-50/70">
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Bulan & Tahun</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Keterangan</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500">Nominal Lunas</th>
-                                    <th className="p-3 text-xs font-bold uppercase text-slate-500 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paidInvoices.length === 0 ? (
-                                    <tr><td colSpan="4" className="p-6 text-sm text-center text-slate-500">Belum ada riwayat lunas.</td></tr>
-                                ) : (
-                                    paidInvoices.map((invoice) => (
-                                        <tr key={invoice.id} className="border-b border-slate-100 bg-green-50/5">
-                                            <td className="p-3 text-sm font-medium text-slate-700">{invoice.month} {invoice.year}</td>
-                                            <td className="p-3 text-sm text-slate-500">{invoice.description || 'SPP Reguler'}</td>
-                                            <td className="p-3 text-sm text-green-600 font-semibold">Rp {invoice.amount.toLocaleString('id-ID')}</td>
-                                            <td className="p-3 text-sm text-center">
-                                                <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded text-xs font-bold">LUNAS ✓</span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    {/* --- KONTEN RIWAYAT LUNAS --- */}
+                    {activeMenu === 'riwayat' && (
+                        <div className="animate-fade-in-up">
+                            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+                                    <h2 className="text-lg font-bold text-slate-800">Daftar Transaksi Selesai</h2>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50">
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Bulan & Tahun</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Keterangan</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200">Nominal Lunas</th>
+                                                <th className="p-4 text-xs font-bold uppercase text-slate-500 border-b border-slate-200 text-center">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {paidInvoices.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" className="p-12 text-sm text-center text-slate-400">
+                                                        Belum ada riwayat pembayaran yang diselesaikan.
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                paidInvoices.map((invoice) => (
+                                                    <tr key={invoice.id} className="bg-green-50/20 hover:bg-green-50/50 transition-colors">
+                                                        <td className="p-4 text-sm font-semibold text-slate-700">{invoice.month} {invoice.year}</td>
+                                                        <td className="p-4 text-sm text-slate-500">{invoice.description || 'SPP Reguler'}</td>
+                                                        <td className="p-4 text-sm text-green-600 font-bold">Rp {invoice.amount.toLocaleString('id-ID')}</td>
+                                                        <td className="p-4 text-center">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-extrabold shadow-sm">
+                                                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                                                                LUNAS
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </div>
+            </main>
 
-            {/* MODAL PEMBAYARAN */}
+            {/* ================= MODAL PEMBAYARAN ================= */}
             {isModalOpen && selectedInvoice && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-                        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-fade-in-up">
+                        <div className="px-6 py-5 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
                             <h3 className="text-lg font-bold text-blue-900">Konfirmasi Pembayaran</h3>
+                            <button onClick={closePaymentModal} className="text-blue-400 hover:text-blue-700">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
                         </div>
 
                         <div className="p-6">
-                            <div className="mb-5 p-4 bg-slate-50 border border-slate-100 rounded-lg">
-                                <p className="text-xs text-slate-500 mb-1">Tagihan Bulan:</p>
-                                <p className="text-sm font-bold text-slate-800 mb-3">{selectedInvoice.month} {selectedInvoice.year}</p>
-                                <p className="text-xs text-slate-500 mb-1">Total Dibayar:</p>
-                                <p className="text-lg font-bold text-red-600">Rp {selectedInvoice.amount.toLocaleString('id-ID')}</p>
+                            <div className="mb-5 p-5 bg-slate-50 border border-slate-200 rounded-xl shadow-inner">
+                                <div className="flex justify-between items-end mb-3">
+                                    <div>
+                                        <p className="text-xs text-slate-500 mb-1 font-medium">Tagihan Bulan</p>
+                                        <p className="text-base font-bold text-slate-800">{selectedInvoice.month} {selectedInvoice.year}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-slate-500 mb-1 font-medium">Total Dibayar</p>
+                                        <p className="text-xl font-black text-red-600">Rp {selectedInvoice.amount.toLocaleString('id-ID')}</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            {error && <div className="p-3 mb-4 text-xs text-red-700 bg-red-100 rounded border border-red-200">{error}</div>}
+                            {error && <div className="p-3 mb-4 text-xs font-semibold text-red-700 bg-red-100 rounded-lg border border-red-200">{error}</div>}
 
                             <div className="mb-2">
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Masukkan Voucher Pembayaran
+                                <label className="block text-sm font-bold text-slate-700 mb-2">
+                                    Masukkan Kode Voucher
                                 </label>
                                 <input 
                                     type="text" 
                                     value={voucherCode}
                                     onChange={(e) => setVoucherCode(e.target.value)}
-                                    placeholder="Masukkan kode pembayaran"
-                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono uppercase tracking-widest text-slate-800 transition-all"
+                                    placeholder="Contoh: SPP-JULI2026-NIS"
+                                    className="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono uppercase tracking-widest text-slate-800 transition-all outline-none shadow-sm bg-white"
                                 />
                             </div>
                         </div>
 
-                        {/* FOOTER MODAL YANG SUDAH DILENGKAPI TOMBOL RESET CANCEL */}
                         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
                             <button 
                                 onClick={handleCancelPending}
                                 disabled={isLoading}
-                                className="text-xs font-semibold text-red-500 hover:text-red-700 underline px-2 transition-colors disabled:text-red-300"
+                                className="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-2 rounded transition-colors disabled:text-red-300 disabled:bg-transparent hover:bg-red-50"
                             >
-                                Ganti Metode / Ulangi Pembayaran
+                                Ganti Metode Pembayaran
                             </button>
 
                             <div className="flex space-x-3 w-full sm:w-auto justify-end">
                                 <button 
                                     onClick={closePaymentModal}
                                     disabled={isLoading}
-                                    className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors"
+                                    className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-300 rounded-xl hover:bg-slate-100 transition-colors"
                                 >
                                     Batal
                                 </button>
                                 <button 
                                     onClick={handleProcessPayment}
                                     disabled={isLoading}
-                                    className="px-5 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm disabled:bg-blue-400 flex items-center transition-all"
+                                    className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-md hover:shadow-lg disabled:bg-blue-400 flex items-center transition-all"
                                 >
-                                    {isLoading ? 'Memproses...' : 'Lanjut ke Pembayaran'}
+                                    {isLoading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
                                 </button>
                             </div>
                         </div>
@@ -399,71 +494,82 @@ export default function StudentDashboard() {
                 </div>
             )}
 
-            {/* MODAL UBAH PASSWORD */}
+            {/* ================= MODAL UBAH PASSWORD ================= */}
             {isPasswordModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                        <h2 className="text-lg font-bold text-slate-800 mb-2">Ubah Password Akun</h2>
-                        <p className="text-xs text-slate-500 mb-4">Demi keamanan, pastikan password Anda tidak mudah ditebak orang lain.</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-7 animate-fade-in-up">
+                        <h2 className="text-xl font-bold text-slate-800 mb-1">Ubah Password Akun</h2>
+                        <p className="text-sm text-slate-500 mb-6">Amankan akun Anda dengan password baru.</p>
                         
-                        {pwdMessage && <div className="mb-3 text-xs text-green-700 p-2.5 bg-green-50 rounded border border-green-200 font-semibold">{pwdMessage}</div>}
-                        {pwdError && <div className="mb-3 text-xs text-red-600 p-2.5 bg-red-50 rounded border border-red-200 font-semibold">{pwdError}</div>}
+                        {pwdMessage && <div className="mb-4 text-xs text-green-700 p-3 bg-green-50 rounded-lg border border-green-200 font-semibold">{pwdMessage}</div>}
+                        {pwdError && <div className="mb-4 text-xs text-red-600 p-3 bg-red-50 rounded-lg border border-red-200 font-semibold">{pwdError}</div>}
                         
                         <form onSubmit={handleChangePassword} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">Password Saat Ini</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5">Password Saat Ini</label>
                                 <input 
                                     type="password" 
                                     required
                                     value={passwordForm.old_password} 
                                     onChange={e => setPasswordForm({...passwordForm, old_password: e.target.value})} 
-                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                                    className="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" 
                                     placeholder="••••••••" 
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">Password Baru</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5">Password Baru</label>
                                 <input 
                                     type="password" 
                                     required
                                     value={passwordForm.new_password} 
                                     onChange={e => setPasswordForm({...passwordForm, new_password: e.target.value})} 
-                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                                    className="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" 
                                     placeholder="Minimal 6 karakter" 
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-600 mb-1">Konfirmasi Password Baru</label>
+                                <label className="block text-xs font-bold text-slate-700 mb-1.5">Konfirmasi Password Baru</label>
                                 <input 
                                     type="password" 
                                     required
                                     value={passwordForm.confirm_password} 
                                     onChange={e => setPasswordForm({...passwordForm, confirm_password: e.target.value})} 
-                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                                    className="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow" 
                                     placeholder="Ulangi password baru" 
                                 />
                             </div>
                             
-                            <div className="flex justify-end space-x-2 pt-2">
+                            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-6">
                                 <button 
                                     type="button"
                                     onClick={() => { setIsPasswordModalOpen(false); setPwdError(''); setPwdMessage(''); }} 
-                                    className="px-4 py-2 text-sm border border-slate-300 rounded-lg font-semibold text-slate-600 hover:bg-slate-50"
+                                    className="px-5 py-2.5 text-sm border border-slate-300 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                                 >
                                     Batal
                                 </button>
                                 <button 
                                     type="submit" 
                                     disabled={pwdLoading} 
-                                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition-colors"
+                                    className="px-5 py-2.5 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all"
                                 >
-                                    {pwdLoading ? 'Memproses...' : 'Simpan Password'}
+                                    {pwdLoading ? 'Menyimpan...' : 'Simpan Password'}
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
+            {/* Styling tambahan untuk animasi smooth */}
+            <style jsx>{`
+                .animate-fade-in-up {
+                    animation: fadeInUp 0.3s ease-out forwards;
+                }
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
